@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>A</title>
+</head>
+<body>
+    <p>
+        <input id="file1" name="file1" type="file" />
+        <input id="file2" name="file2" type="file" />
+    </p>
+
+    <textarea id="msg" cols="80" rows="10"></textarea>
+
+    <p><button id="post">Post</button></p>
+
+    <script type="text/javascript" src="windowname.js"></script>
+
+
+<script>
+    function $(id) {return document.getElementById(id);}
+    //
+    // Testing it out
+    //
+    var file1 = $('file1'),
+        file2 = $('file2');
+
+
+    var msg = $('msg');
+    msg.value = 'fetching data from another domain: ' + location.host.replace('localhost', '127.0.0.1');
+
+    var url = location.href.replace('demo.html', 'action.php').replace('localhost', '127.0.0.1'),
+        datas = {
+            'params': {
+                k: 'happy',
+                a: [1, 2, 3]
+            },
+            'files': [file1]    // set the file input
+        };
+
+
+    $('post').onclick = function(){
+        var t = new Transfer(url, function(response) {
+            $('msg').value += '\n\n' + response;
+        }, datas);
+
+        t.files.push(file2);    // add another file input
+        t.send();
+    };
+</script>
+</body>
+</html>
