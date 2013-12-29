@@ -104,8 +104,7 @@ Transfer.prototype = {
             frame = self.frame,
             form = self.form,
             options = self.options,
-            localProxy = options.localProxy,
-            done = false;
+            localProxy = options.localProxy;
 
         if (frame.onreadystatechange !== undefined) {
             frame.onreadystatechange = onrequest;
@@ -115,7 +114,12 @@ Transfer.prototype = {
 
         // when success get response by window.name, call callback
         function complete() {
-            var data = frame.contentWindow.name;
+            var data;
+            try {
+                data = frame.contentWindow.name;
+            } catch(e) {
+                data = options.defaultName;
+            }
             // if fail to fetch the name, make it error
             if (data == options.defaultName) data = '{"error": 1}';
             self.callback(data);
@@ -157,6 +161,8 @@ Transfer.prototype = {
             }
         }
 
+        var hasSetLocal = false;
+
         function onrequest() {
             try {
                 // opera 的 frame 请求加载机制似有所不同，跳过了 state 为 1 的部分，直接进入 state 为 2 的情况；
@@ -165,22 +171,23 @@ Transfer.prototype = {
             } catch (e) {}
 
             if (self.state == 3) {
-                if (!isLocal()) {
+                if (!isLocal() && !hasSetLocal) {
                     // need to set back to local location in order to have grant to access window.name
+                    hasSetLocal = true;
                     frame.contentWindow.location = localProxy;
                 } else {
                     // ie
-                    if (frame.readyState && frame.readyState.toLowerCase() != 'complete') return;
+                    if (frame.readyState && !(/complete|loaded/i.test(frame.readyState))) return;
 
                     complete();
-                    done = true;
                     clean();
                 }
             }
 
             if (self.state == 2) {
-                frame.contentWindow.location = localProxy;
+                // if set location first, ie7 might emit onrequest rather than run straight forward
                 self.state = 3;
+                frame.contentWindow.location = localProxy;
             }
         }
     },
